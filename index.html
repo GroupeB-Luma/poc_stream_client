@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+
+<body>
+    <div>
+
+        <button id="button">join room 1 </button>
+        <button id="button2">join room 2 </button>
+
+        <video id="leftVideo" width="320" height="240" controls muted>
+            <source src="./birds.mp4" type="video/mp4">
+        </video>
+
+        <canvas style="display:none;" id="preview"></canvas>
+
+        <video width="320" height="240" id="rightVideo" playsinline autoplay></video>
+
+        <img id="play">
+        <div id="logger" style="width: 500px; height: auto; word-break: break-all;"></div>
+    </div>
+</body>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+    var socket = io.connect('http://localhost:82');
+    socket.on('news', function (data) {
+        console.log(data);
+        socket.emit('my other event', { my: 'data' });
+    });
+    var leftVideo = document.getElementById('leftVideo');
+    var rightVideo = document.getElementById('rightVideo');
+    var canvas = document.getElementById("preview");
+    var context = canvas.getContext('2d');
+    var button = document.getElementById('button')
+    var button2 = document.getElementById('button2')
+
+    canvas.width = 320;
+
+    context.width = canvas.width;
+    context.height = canvas.height;
+
+    button.addEventListener("click", function () {
+        socket.emit('join', { roomName: "testRoom" })
+    })
+    button2.addEventListener("click", function () {
+        socket.emit('join', { roomName: "testRoom2" })
+    })
+
+
+    leftVideo.onplay = function () {
+        // Set the source of one <video> element to be a stream from another.
+        var stream = leftVideo.captureStream();
+        console.log(stream)
+        stream
+        //rightVideo.srcObject = stream;
+        setInterval(function () {
+            Draw(leftVideo, context);
+        }, 0.5);
+    };
+
+    function Draw(video, context, stream) {
+        context.drawImage(video, 0, 0, context.width, context.height);
+
+        //videoStreamUrl = leftVideo.createObjectURL(stream);
+        socket.emit('stream', canvas.toDataURL("image/jpeg", 0.5));
+    }
+    var play = document.getElementById("play");
+    var log = document.getElementById('logger');
+
+    socket.on('streamResponse', function (data) {
+        //rightVideo.srcObject = data;
+        play.setAttribute("src", data)
+        //log.textContent = data;
+        //console.log(data)
+        //rightVideo.srcObject = data;
+
+    })
+</script>
+
+</html>
